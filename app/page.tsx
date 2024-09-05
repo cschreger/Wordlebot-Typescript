@@ -1,8 +1,12 @@
 'use client'
-import { useState, useEffect} from "react";
+// want to start this from scratch almost now that I understand more about it (?) - the conf building on codecademy brilliant etc etc 
+import React, { useState, useEffect } from "react";
 import Key from "./components/Key";
 import Keyboard from "./components/Keyboard";
 import {allWords} from "./words";
+import { ToastContainer, toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
+
 
 export interface Tile {
   value: string,
@@ -22,6 +26,8 @@ export default function Game() {
   const [gameStatus, setGameStatus] = useState('Playing'); 
   const [randomWordIdx, setRandomWordIdx] = useState(Math.floor(Math.random()*5700));
   const [secretWord, setSecretWord] = useState(allWords[randomWordIdx]);
+
+  const testNotify = () => toast("Set Up!");
 
   const handleReset = () => {
     let init: Row[] = [];
@@ -56,13 +62,13 @@ export default function Game() {
     setGameStatus("Playing");
     setRandomWordIdx(Math.floor(Math.random()*5700));
     setSecretWord(allWords[randomWordIdx]);
-    console.log(secretWord);
+    toast(`The secret word is ${secretWord}`);
   };
 
   const handleTileClick = (letter: string) => {
     if (gameStatus == "Win") return;
     if (letter == 'Enter') {
-      return currentGuess.length < 5 ? console.log("Guess must be completed first!") : validateUserLetters(currentGuess);
+      return currentGuess.length < 5 ? toast("Guess must be completed first!") : validateUserLetters(currentGuess);
     } else if (letter == "Delete") {
       return setCurrentGuess(currentGuess.slice(0, currentGuess.length - 1))
     }
@@ -76,31 +82,25 @@ export default function Game() {
   }
 
   const validateUserLetters = (currentGuess: string) => {
-    if (!allWords.includes(currentGuess.toLowerCase())) return console.log('Not in word list');
+    if (!allWords.includes(currentGuess.toLowerCase())) return console.log('Invalid guess :(');
     let currentRow = rows[currentTurn];
     let secretWordLetters = secretWord.split('');
     let letterCount: ObjectLiteral = {};
     let guessLetterCount: ObjectLiteral = {};
     let guess = currentGuess.toLowerCase();
-
+    // debugger
     secretWordLetters.forEach((ele, idx) => letterCount[idx] = ele )
-    currentGuess.split('').forEach((ele, idx) => guessLetterCount[idx] = ele.toLowerCase())
-    for (let i = 0; i < currentGuess.length; i++) {
+    guess.split('').forEach((ele, idx) => guessLetterCount[idx] = ele.toLowerCase())
+    for (let i = 0; i < guess.length; i++) {
       if (secretWord[i] == guess[i]) {
+        secretWordLetters.splice(i, 1);
         currentRow[i].status = "guessed";
-        letterCount[guess[i]] -= 1;
-      }
-    }
-
-    debugger
-    for (let i = 0; i < currentGuess.length; i++) {
-      if (secretWord.includes(guess[i]) && letterCount[guess[i]] > 0) {
+      } else if (secretWordLetters.includes(guess[i])) {
+        idxToRemove = secret
+        secretWordLetters.splice(i, 1);
         currentRow[i].status = "wrongPos";
-        letterCount[guess[i]] -= 1;
       }
     }
-
-    currentRow
 
     checkGameStatus()
   }
@@ -149,10 +149,8 @@ export default function Game() {
       </div>
     ))}
 
-    <button 
-      onClick={handleReset}
-     >Play Again/Reset
-     </button>
+    <button onClick={handleReset}>Play Again</button>
+    <ToastContainer />
     </div>
 
     <div className="keyboard-container">
