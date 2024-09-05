@@ -3,11 +3,12 @@
 interface KeyProps {
     value: string;
     status: string;
+    type: string
     onTileClick: (letter: string) => void;
 }
 
 
-export default function Key({value, status, onTileClick}: KeyProps) {
+export default function Key({value, status, type, onTileClick}: KeyProps) {
     const handleClick = (e: any) => {
         const value = e.target.innerHTML;
         onTileClick(value)
@@ -20,8 +21,8 @@ export default function Key({value, status, onTileClick}: KeyProps) {
     return (
         <div
             className={
-                `${status == "guessed" ? "bg-green-700" : status === "wrongPos" ? "bg-yellow-400" : "bg-gray-300"} 
-                w-16 h-16 text-center text-4xl my-2 font-bold mx-2`}
+                `${status == "guessed" ? "bg-green-600" : status === "wrongPos" ? "bg-yellow-400" : status === "not_present" && type == "keyboard" ? "bg-gray-700": "bg-gray-300"} 
+                w-12 h-12 text-center text-4xl my-2 font-bold mx-2 text-gray-800 rounded-sm`}
             onClick={(e) => handleClick(e)}
             // onKeyDown={(e) => handleKeydown(e)}
         >{value}</div>

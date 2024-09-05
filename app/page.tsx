@@ -2,21 +2,26 @@
 import { useState, useEffect} from "react";
 import Key from "./components/Key";
 import Keyboard from "./components/Keyboard";
+import {allWords} from "./words";
 
-interface Tile {
+export interface Tile {
   value: string,
   status: string
 }
 
-type Row = Tile[];
+export type Row = Tile[];
+
+interface ObjectLiteral {
+  [key: string]: any;
+}
 
 export default function Game() {
   const [rows, setRows] = useState<Row[]>([])
   const [currentGuess, setCurrentGuess] = useState('')
   const [currentTurn, setCurrentTurn] = useState(0);
   const [gameStatus, setGameStatus] = useState('Playing'); 
-  // use this for instructions modal etc??
-  const secretWord = "ADIEU";
+  const [randomWordIdx, setRandomWordIdx] = useState(Math.floor(Math.random()*5700));
+  const [secretWord, setSecretWord] = useState(allWords[randomWordIdx]);
 
   const handleReset = () => {
     let init: Row[] = [];
@@ -49,56 +54,59 @@ export default function Game() {
     setCurrentTurn(0);
     setCurrentGuess("");
     setGameStatus("Playing");
+    setRandomWordIdx(Math.floor(Math.random()*5700));
+    setSecretWord(allWords[randomWordIdx]);
+    console.log(secretWord);
   };
 
   const handleTileClick = (letter: string) => {
     if (gameStatus == "Win") return;
-
     if (letter == 'Enter') {
-      currentGuess.length < 5 ? console.log("Guess must be completed first!") : validateUserLetters(currentGuess)
+      return currentGuess.length < 5 ? console.log("Guess must be completed first!") : validateUserLetters(currentGuess);
     } else if (letter == "Delete") {
-      console.log(letter);
-      debugger
-      setCurrentGuess(currentGuess.slice(0, currentGuess.length - 1))
+      return setCurrentGuess(currentGuess.slice(0, currentGuess.length - 1))
     }
     if (currentGuess.length >= 5) return;
+
     setCurrentGuess(currentGuess + letter);
-    console.log(letter)
   }
 
   const handleSubmit = () => {
     validateUserGuess(currentGuess);
   }
 
-
-  const validateUserGuess = (guess: string) => {
-    if (guess == secretWord) {
-      console.log("Holy motherfucking shit, Batman!!");
-    } else {
-      console.log("U dumb.")
-      validateUserLetters(currentGuess)
-      setCurrentTurn(currentTurn + 1);
-      setCurrentGuess("");
-    }
-  }
-
   const validateUserLetters = (currentGuess: string) => {
-    let currentRow = rows[currentTurn]
+    if (!allWords.includes(currentGuess.toLowerCase())) return console.log('Not in word list');
+    let currentRow = rows[currentTurn];
+    let secretWordLetters = secretWord.split('');
+    let letterCount: ObjectLiteral = {};
+    let guessLetterCount: ObjectLiteral = {};
+    let guess = currentGuess.toLowerCase();
+
+    secretWordLetters.forEach((ele, idx) => letterCount[idx] = ele )
+    currentGuess.split('').forEach((ele, idx) => guessLetterCount[idx] = ele.toLowerCase())
     for (let i = 0; i < currentGuess.length; i++) {
-      if (!secretWord.includes(currentGuess[i])) {
-        currentRow[i].status = "not_present"
-      } else if (secretWord[i] == currentGuess[i]) {
-        currentRow[i].status = "guessed"
-      } else if (secretWord.includes(currentGuess[i])) {
-        currentRow[i].status = "wrongPos"
+      if (secretWord[i] == guess[i]) {
+        currentRow[i].status = "guessed";
+        letterCount[guess[i]] -= 1;
       }
     }
+
+    debugger
+    for (let i = 0; i < currentGuess.length; i++) {
+      if (secretWord.includes(guess[i]) && letterCount[guess[i]] > 0) {
+        currentRow[i].status = "wrongPos";
+        letterCount[guess[i]] -= 1;
+      }
+    }
+
+    currentRow
 
     checkGameStatus()
   }
 
   const checkGameStatus = () => {
-    if (currentGuess == secretWord) {
+    if (currentGuess.toLowerCase() == secretWord) {
       setGameStatus("Win");
     } else {
       setCurrentTurn(currentTurn + 1);
@@ -115,10 +123,10 @@ export default function Game() {
   },[]);
 
   useEffect(() => { 
-    if (rows.length === 0 || gameStatus == "Win") return;
+    if (rows.length === 0 || gameStatus == "Win" || currentGuess == "Delete" 
+       || currentGuess == "Enter") return;
 
     let currentRow = rows[currentTurn];
-    debugger
     for (let i = 0; i < currentRow.length; i++) {
       if (currentGuess[i]) {
         currentRow[i].value = currentGuess[i];
@@ -131,12 +139,12 @@ export default function Game() {
   
 
   return (
-    <>
-    <div className="grid-rows-6">
+    <div className="flex flex-col justify-center">
+    <div className="grid-rows-6 flex flex-col items-center">
     {rows.map((turn, i) => (
       <div key={i} className="col-span-6 flex">
       {turn.map((guess, idx) => (
-          <Key key={idx} value={guess.value} status={guess.status} onTileClick={handleTileClick}/>
+          <Key key={idx} value={guess.value} status={guess.status} onTileClick={handleTileClick} type="row"/>
       ))}
       </div>
     ))}
@@ -150,11 +158,11 @@ export default function Game() {
     <div className="keyboard-container">
       <Keyboard 
         onClick={handleTileClick}
-        onSubmit={handleSubmit}
         onDelete={handleDelete}
+        rows={rows}
       />
     </div>
-    </>
+    </div>
   )
 }
 
