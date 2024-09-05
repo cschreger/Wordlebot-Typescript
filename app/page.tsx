@@ -1,6 +1,7 @@
 'use client'
 // want to start this from scratch almost now that I understand more about it (?) - the conf building on codecademy brilliant etc etc 
 import React, { useState, useEffect } from "react";
+import Modal from 'react-modal';
 import Key from "./components/Key";
 import Keyboard from "./components/Keyboard";
 import {allWords} from "./words";
@@ -19,6 +20,34 @@ interface ObjectLiteral {
   [key: string]: any;
 }
 
+const customStyles = {
+  overlay: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(255, 255, 255, 0.75)'
+    },
+    content: {
+      position: 'absolute',
+      top: '40px',
+      left: '40px',
+      right: '40px',
+      bottom: '40px',
+      border: '1px solid #ccc',
+      background: '#fff',
+      overflow: 'auto',
+      WebkitOverflowScrolling: 'touch',
+      borderRadius: '4px',
+      outline: 'none',
+      padding: '20px'
+    }
+};
+
+// Make sure to bind modal to your appElement (https://reactcommunity.org/react-modal/accessibility/)
+Modal.setAppElement('#main');
+
 export default function Game() {
   const [rows, setRows] = useState<Row[]>([])
   const [currentGuess, setCurrentGuess] = useState('')
@@ -26,6 +55,9 @@ export default function Game() {
   const [gameStatus, setGameStatus] = useState('Playing'); 
   const [randomWordIdx, setRandomWordIdx] = useState(Math.floor(Math.random()*5700));
   const [secretWord, setSecretWord] = useState(allWords[randomWordIdx]);
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  // let subtitle: String = '';
+
 
   const testNotify = () => toast("Set Up!");
 
@@ -61,8 +93,7 @@ export default function Game() {
     setCurrentGuess("");
     setGameStatus("Playing");
     setRandomWordIdx(Math.floor(Math.random()*5700));
-    setSecretWord(allWords[randomWordIdx]);
-    toast(`The secret word is ${secretWord}`);
+    setSecretWord('stray');
   };
 
   const handleTileClick = (letter: string) => {
@@ -77,29 +108,27 @@ export default function Game() {
     setCurrentGuess(currentGuess + letter);
   }
 
-  const handleSubmit = () => {
-    validateUserGuess(currentGuess);
-  }
 
   const validateUserLetters = (currentGuess: string) => {
-    if (!allWords.includes(currentGuess.toLowerCase())) return console.log('Invalid guess :(');
+    if (!allWords.includes(currentGuess.toLowerCase())) return toast('Invalid guess :(');
     let currentRow = rows[currentTurn];
     let secretWordLetters = secretWord.split('');
-    let letterCount: ObjectLiteral = {};
-    let guessLetterCount: ObjectLiteral = {};
     let guess = currentGuess.toLowerCase();
-    // debugger
-    secretWordLetters.forEach((ele, idx) => letterCount[idx] = ele )
-    guess.split('').forEach((ele, idx) => guessLetterCount[idx] = ele.toLowerCase())
+
     for (let i = 0; i < guess.length; i++) {
       if (secretWord[i] == guess[i]) {
-        secretWordLetters.splice(i, 1);
+        let idxToRemove = secretWordLetters.indexOf(guess[i])
+        secretWordLetters.splice(idxToRemove, 1);
         currentRow[i].status = "guessed";
-      } else if (secretWordLetters.includes(guess[i])) {
-        idxToRemove = secret
-        secretWordLetters.splice(i, 1);
+      } 
+    }
+
+    for (let i = 0; i < guess.length; i++) {
+      if (secretWordLetters.includes(guess[i])) {
+        let idxToRemove = secretWordLetters.indexOf(guess[i])
+        secretWordLetters.splice(idxToRemove, 1);
         currentRow[i].status = "wrongPos";
-      }
+      } 
     }
 
     checkGameStatus()
@@ -122,6 +151,10 @@ export default function Game() {
     handleReset()
   },[]);
 
+  useEffect(() => {
+    toast(`${secretWord}`)
+  }, [secretWord])
+
   useEffect(() => { 
     if (rows.length === 0 || gameStatus == "Win" || currentGuess == "Delete" 
        || currentGuess == "Enter") return;
@@ -136,31 +169,50 @@ export default function Game() {
     }
     setRows([...rows]);
   }, [currentGuess]);
+
+  // function afterOpenModal() {
+  //   subtitle.style.color = '#f00'
+  // }
+
+  function closeModal() {
+    setModalIsOpen(false);
+  }
+
+  function openModal() {
+    setModalIsOpen(true);
+  }
   
 
   return (
-    <div className="flex flex-col justify-center">
-    <div className="grid-rows-6 flex flex-col items-center">
-    {rows.map((turn, i) => (
-      <div key={i} className="col-span-6 flex">
-      {turn.map((guess, idx) => (
+      <div id="main-board" className="flex flex-col justify-center">
+      <div className="grid-rows-6 flex flex-col items-center">
+      {rows.map((turn, i) => (
+        <div key={i} className="col-span-6 flex">
+        {turn.map((guess, idx) => (
           <Key key={idx} value={guess.value} status={guess.status} onTileClick={handleTileClick} type="row"/>
+        ))}
+        </div>
       ))}
+
+      <button onClick={handleReset}>Play Again</button>
+      <button onClick={openModal}>Open Modal</button>
+      <ToastContainer />
       </div>
-    ))}
 
-    <button onClick={handleReset}>Play Again</button>
-    <ToastContainer />
-    </div>
-
-    <div className="keyboard-container">
-      <Keyboard 
-        onClick={handleTileClick}
-        onDelete={handleDelete}
-        rows={rows}
-      />
-    </div>
-    </div>
+      <div className="keyboard-container">
+        <Keyboard 
+          onClick={handleTileClick}
+          onDelete={handleDelete}
+          rows={rows}
+          />
+      </div>
+      <Modal
+      style={customStyles}
+      isOpen={modalIsOpen}
+      >
+        <button onClick={closeModal}></button>
+      </Modal>
+      </div>
   )
 }
 
