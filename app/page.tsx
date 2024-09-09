@@ -7,6 +7,9 @@ import Keyboard from "./components/Keyboard";
 import {allWords} from "./words";
 import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
+import { Prisma, PrismaClient } from "@prisma/client";
+import prisma from "../lib/prisma";
+
 
 
 export interface Tile {
@@ -181,6 +184,20 @@ export default function Game() {
   function openModal() {
     setModalIsOpen(true);
   }
+
+  async function saveGame() {
+    const newGame = await prisma.game.create({
+      data: {
+        userId: 1,
+        numGuesses: currentTurn,
+        secretWord: secretWord,
+        gameWon: (gameStatus == 'won'),
+        difficulty: 'normal'
+      }
+    })
+
+    return newGame
+  }
   
 
   return (
@@ -196,6 +213,7 @@ export default function Game() {
 
       <button onClick={handleReset}>Play Again</button>
       <button onClick={openModal}>Open Modal</button>
+      <button onClick={saveGame}>SaveGame</button>
       <ToastContainer />
       </div>
 
