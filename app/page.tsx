@@ -7,8 +7,7 @@ import Keyboard from "./components/Keyboard";
 import {allWords} from "./words";
 import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
-import { Prisma, PrismaClient } from "@prisma/client";
-import prisma from "../lib/prisma";
+import { useRouter } from "next/navigation";
 
 
 
@@ -61,6 +60,31 @@ export default function Game() {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   // let subtitle: String = '';
 
+  const router = useRouter();
+
+  const saveGame = async (e: React.SyntheticEvent) => {
+    e.preventDefault();
+
+    try {
+      await fetch('/api/game', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          userId: 1,
+          numGuesses: currentTurn,
+          secretWord: secretWord,
+          gameWon: (gameStatus == 'won'),
+          difficulty: 'normal'
+        })
+      })
+    } catch {
+      toast('Game could not be saved')
+    }
+    router.refresh();
+  }
+
 
   const testNotify = () => toast("Set Up!");
 
@@ -96,11 +120,11 @@ export default function Game() {
     setCurrentGuess("");
     setGameStatus("Playing");
     setRandomWordIdx(Math.floor(Math.random()*5700));
-    setSecretWord('stray');
+    setSecretWord(allWords[randomWordIdx]);
   };
 
   const handleTileClick = (letter: string) => {
-    if (gameStatus == "Win") return;
+    if (gameStatus == "won") return;
     if (letter == 'Enter') {
       return currentGuess.length < 5 ? toast("Guess must be completed first!") : validateUserLetters(currentGuess);
     } else if (letter == "Delete") {
@@ -139,7 +163,7 @@ export default function Game() {
 
   const checkGameStatus = () => {
     if (currentGuess.toLowerCase() == secretWord) {
-      setGameStatus("Win");
+      setGameStatus("won");
     } else {
       setCurrentTurn(currentTurn + 1);
       setCurrentGuess("");
@@ -155,11 +179,11 @@ export default function Game() {
   },[]);
 
   useEffect(() => {
-    toast(`${secretWord}`)
+    toast('Good Luck, username!')
   }, [secretWord])
 
   useEffect(() => { 
-    if (rows.length === 0 || gameStatus == "Win" || currentGuess == "Delete" 
+    if (rows.length === 0 || gameStatus == "won" || currentGuess == "Delete" 
        || currentGuess == "Enter") return;
 
     let currentRow = rows[currentTurn];
@@ -184,21 +208,6 @@ export default function Game() {
   function openModal() {
     setModalIsOpen(true);
   }
-
-  async function saveGame() {
-    const newGame = await prisma.game.create({
-      data: {
-        userId: 1,
-        numGuesses: currentTurn,
-        secretWord: secretWord,
-        gameWon: (gameStatus == 'won'),
-        difficulty: 'normal'
-      }
-    })
-
-    return newGame
-  }
-  
 
   return (
       <div id="main-board" className="flex flex-col justify-center">
