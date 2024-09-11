@@ -1,5 +1,4 @@
 'use client'
-// want to start this from scratch almost now that I understand more about it (?) - the conf building on codecademy brilliant etc etc 
 import React, { useState, useEffect } from "react";
 import Modal from 'react-modal';
 import Key from "./components/Key";
@@ -8,6 +7,7 @@ import {allWords} from "./words";
 import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { useRouter } from "next/navigation";
+import { SignUpForm } from "./components/SignUpForm";
 
 
 
@@ -48,7 +48,7 @@ const customStyles = {
 };
 
 // Make sure to bind modal to your appElement (https://reactcommunity.org/react-modal/accessibility/)
-Modal.setAppElement('#main');
+// Modal.setAppElement('#main');
 
 export default function Game() {
   const [rows, setRows] = useState<Row[]>([])
@@ -58,7 +58,20 @@ export default function Game() {
   const [randomWordIdx, setRandomWordIdx] = useState(Math.floor(Math.random()*5700));
   const [secretWord, setSecretWord] = useState(allWords[randomWordIdx]);
   const [modalIsOpen, setModalIsOpen] = useState(false);
-  // let subtitle: String = '';
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [userStats, setUserStats] = useState({});
+
+  //combine above 2
+
+  // useEffect(() => {
+  //   async function fetchUserId() {
+  //     let res = await fetch('/api/user', {
+  //       method: "GET"
+  //     })
+  //     setCurrentUserId()
+  //   }
+
+  // })
 
   const router = useRouter();
 
@@ -72,7 +85,7 @@ export default function Game() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          userId: 1,
+          userId: currentUserId,
           numGuesses: currentTurn,
           secretWord: secretWord,
           gameWon: (gameStatus == 'won'),
@@ -85,8 +98,6 @@ export default function Game() {
     router.refresh();
   }
 
-
-  const testNotify = () => toast("Set Up!");
 
   const handleReset = () => {
     let init: Row[] = [];
@@ -209,6 +220,23 @@ export default function Game() {
     setModalIsOpen(true);
   }
 
+  async function fetchUserStats() {
+    try {
+      const res = await fetch('/api/user/stats', {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        },
+      })
+
+      const user = await res.json() 
+      setUserStats(user);
+
+    } catch {
+      toast('Stats could not be retrieved')
+    }
+  }
+
   return (
       <div id="main-board" className="flex flex-col justify-center">
       <div className="grid-rows-6 flex flex-col items-center">
@@ -222,7 +250,8 @@ export default function Game() {
 
       <button onClick={handleReset}>Play Again</button>
       <button onClick={openModal}>Open Modal</button>
-      <button onClick={saveGame}>SaveGame</button>
+      <button onClick={saveGame}>Save Game</button>
+      <button onClick={fetchUserStats}>See My Stats</button>
       <ToastContainer />
       </div>
 
@@ -239,6 +268,7 @@ export default function Game() {
       >
         <button onClick={closeModal}></button>
       </Modal>
+      <SignUpForm />
       </div>
   )
 }
