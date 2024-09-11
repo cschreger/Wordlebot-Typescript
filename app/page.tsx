@@ -8,7 +8,8 @@ import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { useRouter } from "next/navigation";
 import { SignUpForm } from "./components/SignUpForm";
-import { UserStats } from "./components/UserStats";
+import { UserStats } from "./components/Modal/UserStats";
+import { Instructions } from "./components/Modal/Instructions";
 
 
 
@@ -33,23 +34,25 @@ const customStyles = {
       backgroundColor: 'rgba(255, 255, 255, 0.75)'
     },
     content: {
+      display: 'flex',
+      color: 'black',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'flex-stats',
+      boxShadow: 'rgba(100, 100, 111, 0.3) 0px 7px 29px 0px',
+      backgroundColor: 'white',
+      border: '2px solid rgb(240, 240, 240)',
+      borderRadius: '12px',
       position: 'absolute',
-      top: '40px',
-      left: '40px',
-      right: '40px',
-      bottom: '40px',
-      border: '1px solid #ccc',
-      background: '#fff',
-      overflow: 'auto',
-      WebkitOverflowScrolling: 'touch',
-      borderRadius: '4px',
-      outline: 'none',
-      padding: '20px'
+      width: '320px',
+      height: 'fit-content',
+      top: '120px',
+      left: 'calc(50% - 150px)'
     }
 };
 
 // Make sure to bind modal to your appElement (https://reactcommunity.org/react-modal/accessibility/)
-// Modal.setAppElement('#main');
+Modal.setAppElement('#main');
 
 export default function Game() {
   const [rows, setRows] = useState<Row[]>([])
@@ -59,7 +62,8 @@ export default function Game() {
   const [randomWordIdx, setRandomWordIdx] = useState(Math.floor(Math.random()*5700));
   const [secretWord, setSecretWord] = useState(allWords[randomWordIdx]);
   const [modalIsOpen, setModalIsOpen] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState(null);
+  const [modalType, setModalType] = useState('info');
+  const [currentUserId, setCurrentUserId] = useState(1);
   const [userStats, setUserStats] = useState({});
 
   //combine above 2
@@ -227,10 +231,16 @@ export default function Game() {
   // }
 
   function closeModal() {
+    debugger
     setModalIsOpen(false);
   }
 
-  function openModal() {
+  function openModal(type: string) {
+    if (type == "info") {
+      setModalType("info")
+    } else {
+      setModalType("stats")
+    }
     setModalIsOpen(true);
   }
 
@@ -252,7 +262,12 @@ export default function Game() {
   }
 
   return (
-      <div id="main-board" className="flex flex-col justify-center">
+    
+    <div id="main-board" className="flex flex-col justify-center bg-gray-600">
+      <div className="header">
+        <button onClick={() => openModal("info")}>Information</button>
+        <button onClick={() => openModal("stats")}>Stats</button>
+      </div>
       <div className="grid-rows-6 flex flex-col items-center gap-1">
       {rows.map((turn, i) => (
         <div key={i} className="col-span-6 flex">
@@ -263,7 +278,6 @@ export default function Game() {
       ))}
 
       <button onClick={handleReset}>Play Again</button>
-      <button onClick={openModal}>Open Modal</button>
       <ToastContainer />
       </div>
 
@@ -277,12 +291,13 @@ export default function Game() {
       <Modal
       style={customStyles}
       isOpen={modalIsOpen}
+      onRequestClose={closeModal}
+      type="Instructions"
       >
-        <button onClick={closeModal}></button>
+        {currentUserId != null && modalType=="stats" ? <UserStats stats={userStats} /> : <Instructions closeModal={closeModal}/>}
       </Modal>
       {/* <SignUpForm /> */}
       
-      <UserStats stats={userStats} />
       </div>
   )
 }
