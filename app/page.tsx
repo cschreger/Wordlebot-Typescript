@@ -54,7 +54,7 @@ const customStyles = {
 export default function Game() {
   const [rows, setRows] = useState<Row[]>([])
   const [currentGuess, setCurrentGuess] = useState('')
-  const [currentTurn, setCurrentTurn] = useState(0);
+  const [currentTurn, setCurrentTurn] = useState(1);
   const [gameStatus, setGameStatus] = useState('Playing'); 
   const [randomWordIdx, setRandomWordIdx] = useState(Math.floor(Math.random()*5700));
   const [secretWord, setSecretWord] = useState(allWords[randomWordIdx]);
@@ -76,9 +76,7 @@ export default function Game() {
 
   const router = useRouter();
 
-  const saveGame = async (e: React.SyntheticEvent) => {
-    e.preventDefault();
-
+  const saveGame = async () => {
     try {
       await fetch('/api/game', {
         method: "POST",
@@ -86,7 +84,7 @@ export default function Game() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          userId: currentUserId,
+          userId: 1,
           numGuesses: currentTurn,
           secretWord: secretWord,
           gameWon: (gameStatus == 'won'),
@@ -128,7 +126,7 @@ export default function Game() {
       init.push(row);
     }
     setRows(init);
-    setCurrentTurn(0);
+    setCurrentTurn(1);
     setCurrentGuess("");
     setGameStatus("Playing");
     setRandomWordIdx(Math.floor(Math.random()*5700));
@@ -136,7 +134,7 @@ export default function Game() {
   };
 
   const handleTileClick = (letter: string) => {
-    if (gameStatus == "won") return;
+    if (gameStatus == "won" || gameStatus == "lost") return;
     if (letter == 'Enter') {
       return currentGuess.length < 5 ? toast("Guess must be completed first!") : validateUserLetters(currentGuess);
     } else if (letter == "Delete") {
@@ -150,7 +148,7 @@ export default function Game() {
 
   const validateUserLetters = (currentGuess: string) => {
     if (!allWords.includes(currentGuess.toLowerCase())) return toast('Invalid guess :(');
-    let currentRow = rows[currentTurn];
+    let currentRow = rows[currentTurn - 1];
     let secretWordLetters = secretWord.split('');
     let guess = currentGuess.toLowerCase();
 
@@ -176,6 +174,10 @@ export default function Game() {
   const checkGameStatus = () => {
     if (currentGuess.toLowerCase() == secretWord) {
       setGameStatus("won");
+      toast("Congratulations!")
+    } else if (currentTurn == 6) {
+      setGameStatus("lost");
+      toast("Better Luck Next Time")
     } else {
       setCurrentTurn(currentTurn + 1);
       setCurrentGuess("");
@@ -198,11 +200,18 @@ export default function Game() {
     toast('Good Luck, username!')
   }, [secretWord])
 
+  useEffect(() => {
+    if (gameStatus != 'Playing') {
+      saveGame();
+      fetchUserStats()
+    }
+  }, [gameStatus])
+
   useEffect(() => { 
     if (rows.length === 0 || gameStatus == "won" || currentGuess == "Delete" 
        || currentGuess == "Enter") return;
 
-    let currentRow = rows[currentTurn];
+    let currentRow = rows[currentTurn - 1];
     for (let i = 0; i < currentRow.length; i++) {
       if (currentGuess[i]) {
         currentRow[i].value = currentGuess[i];
@@ -244,7 +253,7 @@ export default function Game() {
 
   return (
       <div id="main-board" className="flex flex-col justify-center">
-      <div className="grid-rows-6 flex flex-col items-center">
+      <div className="grid-rows-6 flex flex-col items-center gap-1">
       {rows.map((turn, i) => (
         <div key={i} className="col-span-6 flex">
         {turn.map((guess, idx) => (
@@ -255,8 +264,6 @@ export default function Game() {
 
       <button onClick={handleReset}>Play Again</button>
       <button onClick={openModal}>Open Modal</button>
-      <button onClick={saveGame}>Save Game</button>
-      <button onClick={fetchUserStats}>See My Stats</button>
       <ToastContainer />
       </div>
 
