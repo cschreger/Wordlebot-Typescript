@@ -8,6 +8,7 @@ import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { useRouter } from "next/navigation";
 import { SignUpForm } from "./components/SignUpForm";
+import { UserStats } from "./components/UserStats";
 
 
 
@@ -190,6 +191,10 @@ export default function Game() {
   },[]);
 
   useEffect(() => {
+    fetchUserStats()
+  }, [])
+
+  useEffect(() => {
     toast('Good Luck, username!')
   }, [secretWord])
 
@@ -268,7 +273,9 @@ export default function Game() {
       >
         <button onClick={closeModal}></button>
       </Modal>
-      <SignUpForm />
+      {/* <SignUpForm /> */}
+      
+      <UserStats stats={userStats} />
       </div>
   )
 }
